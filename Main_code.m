@@ -2,7 +2,6 @@ clear; clc
 %%
 
 load("Four_node.mat")
-load("n_k.mat")
 
 b(:,1) = 1;
 b(:,2) = 2;
@@ -20,10 +19,10 @@ Expected_block   = zeros(time_horizon , 1);
 %% Core Hyper Parameters
 
 lambda = 141; % Lagrange multiplier (\lambda)
-eta    = sqrt(1/time_horizon); % (\eta)
+eta    = sqrt(1/T_M); % (\eta)
 v      = 20; % Blocking cost threshold (v)
 epsilon= 0.0; % Exploration rate (\varepsilon)
-Beta_LR= .01; % Learning rate (\beta)
+Beta_LR= .1; % Learning rate (\beta)
 
 %% Estimator's Hyper Parameters (Router)
 
@@ -39,7 +38,7 @@ router.rule_base            = zeros (router.num_rules , 1);
 %% Estimator's Hyper Parameters (Server)
 
 server.num                  = 11;
-server.jobs                 = 3; % Possible reservations. Action 1: 0 reservations / Action 2: 1 resersavtion / ... / Action 5: 4 reservations
+server.jobs                 = 4; % Possible reservations. Action 1: 0 reservations / Action 2: 1 resersavtion / ... / Action 5: 4 reservations
 server.job_vector           = server.jobs * ones( 1 , server.num ); 
 server.num_possible_actions = prod ( server.job_vector );
 server.num_MF               = 2;
@@ -50,6 +49,7 @@ server.input_bounds(: , 2)  = server.jobs;
 server.rule_base_R          = ones (server.num_rules , 1) / server.num_rules;
 server.rule_base_C          = ones (server.num_rules , router.num_rules) / server.num_rules;
 server.probability          = zeros (time_horizon , 1);
+server.P                    = zeros (server.num_rules , time_horizon);
 probability_aux_normalized_pre = ones(server.num_rules , 1) / server.num_rules;
 %%
 
@@ -129,10 +129,9 @@ for It = 1 : time_horizon
         
         FFS = max(0 , min(K , It + 1) ^ -1 * (sum(f_t(: , max(1 , K - It + 2) : K) , 2)) - v);
         
-        F_s (: , 1 : end - 1) = F_s (: , 2 : end);
         F_s (: , end) = FFS;
         
-        probability_aux = exp(- eta * sum(server.rule_base_R + lambda * F_s , 2));
+        probability_aux = exp(- eta * sum(server.rule_base_R + lambda * F_s (: , 1:It - 1) , 2));
         probability_aux_normalized = probability_aux ./ sum(probability_aux);
         
         %
@@ -143,12 +142,16 @@ for It = 1 : time_horizon
 
         probability_aux_normalized_pre = probability_aux_normalized;
 
+
+
         [~ , d] = max(probability_aux_normalized);
         [X{1:11}] = ind2sub( server.jobs*ones(1,11) , d);
         Y = cell2mat (X);
         d = sub2ind( server.jobs*ones(1,11) , Y(11) , Y(10) ,Y(9) ,Y(8) ,Y(7) ,Y(6) ,Y(5) ,Y(4) ,Y(3) ,Y(2) ,Y(1));
         Repeat_a( : , 1:end-1 ) = Repeat_a( : , 2:end ); Repeat_a( : , end ) = 0;
         Repeat_a( d , end )     = 1;
+
+
     end
 
     %%
