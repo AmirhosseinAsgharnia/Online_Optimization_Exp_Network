@@ -1,8 +1,8 @@
-function [C_C , C_R , evaluated_costs] = cost_function ( b , Repeat_a , server, router)
+function [C_C , C_R , evaluated_costs] = cost_function ( b , Repeat_a , server, router, Cost_R , Cost_C)
 
 max_tests = 1000;
 
-r_a = sum (Repeat_a , 2);
+r_a   = sum(Repeat_a , 2);
 a_ind = find(r_a ~= 0);
 
 [H{1 : 11}] = ind2sub (server.jobs * ones(1 , 11) , a_ind);
@@ -27,7 +27,7 @@ for It = evaluated_costs'
 
     count = count + 1;
 
-    [H{1:11}] = ind2sub(server.jobs * ones(1 , 11),It);
+    [H{1:11}] = ind2sub(server.jobs * ones(1 , 11) , It);
     A = cell2mat(H);
 
     Sub_1( count , :) = b+1;
@@ -44,6 +44,6 @@ input_index = sub2ind (possible_actions , Sub_total (:,1) , Sub_total (:,2) , Su
     Sub_total (:,10), Sub_total (:,11), Sub_total (:,12), Sub_total (:,13), Sub_total (:,14), Sub_total (:,15));
 
 C_C = Cost_C( input_index );
-C_R   = Cost_R( input_index );
+C_R = Cost_R( input_index );
 
 end
